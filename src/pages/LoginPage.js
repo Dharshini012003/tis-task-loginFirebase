@@ -1,13 +1,15 @@
 import React, { useState } from 'react'
 import './LoginPage.css';
-import { LoginApi } from '../services/api';
+import { LoginApi, SendPasswordResetEmail } from '../services/api';
 import { storeUserData } from '../services/Storage';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { isAuthenticated } from '../services/Auth';
+import { toast } from 'react-toastify';
 
 const LoginPage = () => {
+    const navigate = useNavigate()
     const initialStateErrors = {
-        email: { required: false },
+        email: { required: false, message: '' },
         password: { required: false },
         custom_error: null
     }
@@ -23,52 +25,87 @@ const LoginPage = () => {
         console.log(inputs)
     }
 
-     const handleSubmit =(e)=>{
-       console.log(inputs)
-       
-       e.preventDefault();
-       let errors= initialStateErrors;
-       let hasError = false;
-    
-       if(inputs.email == ""){
-        errors.email.required=true;
-        hasError=true;
-       }
-  
-       if(inputs.password == ""){
-        errors.password.required=true;
-        hasError=true;
-       }
-        
-       if(!hasError)
-       {
-       
-          //sending login api request
-          LoginApi(inputs)
-          .then((response)=>{
-              storeUserData(response.data.idToken);
-             console.log(response)
-          })
-          .catch((err)=>{
-             if (err.code=="ERR_BAD_REQUEST") {
-                setErrors({...errors,custom_error:"Invalid Credentials"})
-                console.log(errors)
-             }
-              console.log(err)
-          })
-        //   .finally(()=>{
-        //       setLoading(false)
-        //   })
-       }
-       setErrors({...errors})
-       console.log(errors)
-  
-     }
-    
-     if(isAuthenticated()){
-        //redierct user to dashboard
-        return <Navigate to="/dashboard"/>
-     }
+    const handleSubmit = (e) => {
+        console.log(inputs)
+
+        e.preventDefault();
+        let errors = initialStateErrors;
+        let hasError = false;
+
+        if (inputs.email == "") {
+            errors.email.required = true;
+            hasError = true;
+        }
+
+        if (inputs.password == "") {
+            errors.password.required = true;
+            hasError = true;
+        }
+
+        if (!hasError) {
+
+            //sending login api request
+            LoginApi(inputs)
+                .then((response) => {
+                    storeUserData(response.data.idToken);
+                    console.log(response)
+                    toast.success("You are Logged In...!")
+                    //  navigate('/dashboard')
+                    setTimeout(navigate, 6000, '/dashboard')
+                })
+                .catch((err) => {
+                    if (err.code == "ERR_BAD_REQUEST") {
+                        setErrors({ ...errors, custom_error: "Invalid Credentials" })
+                        console.log(errors)
+                    }
+                    console.log(err)
+                })
+            //   .finally(()=>{
+            //       setLoading(false)
+            //   })
+        }
+        setErrors({ ...errors })
+        console.log(errors)
+
+    }
+
+    //email validation on blur
+    //email validation on blur
+    const validateEmail = (email) => {
+        let RemoveExtraSpaceEmail = email.trim().replace(/\s+/g, '');
+        var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
+        if (RemoveExtraSpaceEmail == '') {
+            setErrors({
+                ...errors,
+                email: { required: true, message: 'Email is required.' }
+            });
+
+        }
+        else if (!emailRegex.test(RemoveExtraSpaceEmail)) {
+            setErrors({
+                ...errors,
+                email: { required: true, message: 'Please enter a valid Email ID' }
+            });
+
+        }
+        else {
+            setErrors({
+                ...errors,
+                email: { required: false, message: '' }
+            });
+        }
+    };
+
+    const handleForgetPassword = ()=>{
+                     navigate('/forgotPassword')
+                    // setTimeout(navigate, 6000, '/dashboard')
+    }
+
+
+    //  if(isAuthenticated()){
+    //     //redierct user to dashboard
+    //      return <Navigate to="/dashboard"/>
+    //  }
 
 
     return (
@@ -79,42 +116,48 @@ const LoginPage = () => {
                 <form id="loginForm" onSubmit={handleSubmit} action="" >
                     <div className="mb-3">
                         <div className="form-group ">
-                               
+
                             <label htmlFor="email" className="form-label h6 " >Email</label>
                             <div className="input-group">
-                             <span className="input-group-text" id="basic-addon1"><i className="fa fa-envelope" aria-hidden="true"></i></span>
-                            <input
-                                type="email"
-                                name="email"
-                                className="form-control"
-                                id="email"
-                                placeholder="Enter email"
-                                aria-describedby="basic-addon1"
-                                onChange={handleInput}
-                            />
+                                <span className="input-group-text" id="basic-addon1"><i className="fa fa-envelope" aria-hidden="true"></i></span>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    className="form-control"
+                                    id="email"
+                                    placeholder="Enter email"
+                                    aria-describedby="basic-addon1"
+                                    onChange={handleInput}
+                                    onBlur={e => { validateEmail(e.target.value) }}
+                                />
                             </div>
                             {
-                                errors.email.required ?
-                                    (<span className="text-danger" >
-                                        Email is required.
-                                    </span>) : null
+                                errors.email.required ? (
+                                    <span className="text-danger">
+                                        {errors.email.message || 'Email is required.'}
+                                    </span>
+                                ) : null
                             }
+
                         </div>
                     </div>
 
                     <div className="mb-3">
                         <div className="form-group">
                             <label htmlFor="password" className="form-label h6">Password</label>
-                             <div className="input-group">
-                                <span className="input-group-text" id="basic-addon1"><i className="fa fa-key" aria-hidden="true"></i></span>
-                            <input
-                                type="password"
-                                name="password"
-                                className="form-control"
-                                id="password"
-                                placeholder="Enter password"
-                                onChange={handleInput}
-                            />
+                            <div className="input-group">
+                                <span className="input-group-text" id="basic-addon1"><i className="	fas fa-lock" aria-hidden="true"></i></span>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    className="form-control"
+                                    id="password"
+                                    placeholder="Enter password"
+                                    onChange={handleInput}
+                                />
+                            </div>
+                            <div className="w-100 text-end mt-1">
+                                <Link to="/forgotPassword" className="small" onClick={handleForgetPassword}>Forgot Password?</Link>
                             </div>
                             {
                                 errors.password.required ? (<span className="text-danger" >
@@ -133,9 +176,9 @@ const LoginPage = () => {
                     </span>
 
                     <button type="submit" className="btn btn-primary w-100 mb-3 mt-2">Login</button>
-                    
-                     <div className="form-group text-center">
-                       Create new account ? Please <Link to="/">Register</Link>
+
+                    <div className="form-group text-center">
+                        Create new account ? Please <Link to="/">Register</Link>
                     </div>
 
                 </form>
