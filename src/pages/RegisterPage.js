@@ -2,11 +2,13 @@ import React, { useState } from 'react'
 import './RegisterPage.css';
 import { RegisterApi } from '../services/api';
 import { storeUserData } from '../services/Storage';
-import { Link, Navigate } from 'react-router-dom';
-import { isAuthenticated } from '../services/Auth'
+import { Link, useNavigate } from 'react-router-dom';
+// import { isAuthenticated } from '../services/Auth'
 import { toast } from 'react-toastify';
+// import { validateEmail } from '../validations/FieldValidation';
 
 const RegisterPage = () => {
+    const navigate=useNavigate()
     const initialStateErrors = {
         email: { required: false, message: '' },
         password: { required: false },
@@ -15,6 +17,7 @@ const RegisterPage = () => {
     }
 
     const [errors, setErrors] = useState(initialStateErrors)
+    // const[loading,setLoading] =useState(false)
     const [inputs, setInputs] = useState({
         email: "",
         password: "",
@@ -42,9 +45,6 @@ const RegisterPage = () => {
         //     }
 
         // }
-
-
-
 
         console.log(inputs)
     }
@@ -81,6 +81,8 @@ const RegisterPage = () => {
                     storeUserData(response.data.idToken);
                     console.log(response)
                     toast.success("User added succesfully!")
+                    // navigate('/dashboard')
+                    setTimeout(navigate,6000,'/dashboard')
                 })
                 .catch((err) => {
                     if (err.response.data.error.message == "EMAIL_EXISTS") {
@@ -106,6 +108,7 @@ const RegisterPage = () => {
 
     }
 
+//email validation on blur
 const validateEmail = (email) => {
       let RemoveExtraSpaceEmail = email.trim().replace(/\s+/g, '');
             var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
@@ -133,11 +136,10 @@ const validateEmail = (email) => {
 
 
 
-    if (isAuthenticated()) {
-        //redierct user to dashboard
-
-        return <Navigate to="/dashboard" />
-    }
+    // if (isAuthenticated()) {
+    //     //redierct user to dashboard
+    //     return <Navigate to="/dashboard" />
+    // }
 
 
     return (
@@ -201,7 +203,7 @@ const validateEmail = (email) => {
                         <div className="form-group">
                             <label htmlFor="password" className="form-label h6">Password</label>
                             <div className="input-group">
-                                <span className="input-group-text" id="basic-addon1"><i className="fa fa-key" aria-hidden="true"></i></span>
+                                <span className="input-group-text" id="basic-addon1"><i className="	fas fa-lock" aria-hidden="true"></i></span>
                                 <input
                                     type="password"
                                     name="password"
