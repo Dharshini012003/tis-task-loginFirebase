@@ -2,13 +2,13 @@ import React, { useState } from 'react'
 import './RegisterPage.css';
 import { RegisterApi } from '../services/api';
 import { storeUserData } from '../services/Storage';
-import { Link ,Navigate} from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { isAuthenticated } from '../services/Auth'
-import {toast} from 'react-toastify';
+import { toast } from 'react-toastify';
 
 const RegisterPage = () => {
     const initialStateErrors = {
-        email: { required: false },
+        email: { required: false, message: '' },
         password: { required: false },
         name: { required: false },
         custom_error: null
@@ -18,11 +18,34 @@ const RegisterPage = () => {
     const [inputs, setInputs] = useState({
         email: "",
         password: "",
-        name:""
+        name: ""
     })
 
     const handleInput = (e) => {
         setInputs({ ...inputs, [e.target.name]: e.target.value })
+        // if (e.target.name == "email") {
+
+        //     let RemoveExtraSpaceEmail = e.target.value.trim().replace(/\s+/g, '');
+        //     var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
+        //     if (!emailRegex.test(RemoveExtraSpaceEmail)) {
+        //         setErrors({
+        //             ...errors,
+        //             email: { required: true, message: 'Please enter a valid Email ID' }
+        //         });
+
+        //     }
+        //     else {
+        //         setErrors({
+        //             ...errors,
+        //             email: { required: false, message: '' }
+        //         });
+        //     }
+
+        // }
+
+
+
+
         console.log(inputs)
     }
 
@@ -43,6 +66,8 @@ const RegisterPage = () => {
             hasError = true;
         }
 
+
+
         if (inputs.password == "") {
             errors.password.required = true;
             hasError = true;
@@ -55,6 +80,7 @@ const RegisterPage = () => {
                 .then((response) => {
                     storeUserData(response.data.idToken);
                     console.log(response)
+                    toast.success("User added succesfully!")
                 })
                 .catch((err) => {
                     if (err.response.data.error.message == "EMAIL_EXISTS") {
@@ -63,6 +89,10 @@ const RegisterPage = () => {
                     else if (String(err.response.data.error.message).includes('WEAK_PASSWORD')) {
                         setErrors({ ...errors, custom_error: "Password should be atleast 6 charecters" })
                     }
+                    else if (String(err.response.data.error.message).includes('INVALID_EMAIL')) {
+                        setErrors({ ...errors, custom_error: "Please enter a valid Email ID" })
+                    }
+
                     console.log(err)
                 })
             // .finally(()=>{
@@ -71,16 +101,43 @@ const RegisterPage = () => {
         }
         setErrors({ ...errors })
         console.log(errors)
-        toast.success("User added succesfully!")
-        
+
+
 
     }
 
-     if(isAuthenticated()){
+const validateEmail = (email) => {
+      let RemoveExtraSpaceEmail = email.trim().replace(/\s+/g, '');
+            var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
+             if (RemoveExtraSpaceEmail=='') {
+                setErrors({
+                    ...errors,
+                    email: { required: true, message: 'Email is required.' }
+                });
+
+            }
+           else if (!emailRegex.test(RemoveExtraSpaceEmail)) {
+                setErrors({
+                    ...errors,
+                    email: { required: true, message: 'Please enter a valid Email ID' }
+                });
+
+            }
+            else {
+                setErrors({
+                    ...errors,
+                    email: { required: false, message: '' }
+                });
+            }
+};
+
+
+
+    if (isAuthenticated()) {
         //redierct user to dashboard
 
-        return <Navigate to="/dashboard"/>
-     }
+        return <Navigate to="/dashboard" />
+    }
 
 
     return (
@@ -105,7 +162,7 @@ const RegisterPage = () => {
                                     onChange={handleInput}
                                 />
                             </div>
-                             {
+                            {
                                 errors.name.required ?
                                     (<span className="text-danger" >
                                         Name is required.
@@ -126,14 +183,17 @@ const RegisterPage = () => {
                                     placeholder="Enter email"
                                     aria-describedby="basic-addon1"
                                     onChange={handleInput}
+                                    onBlur={e=>{validateEmail(e.target.value)}}
                                 />
                             </div>
                             {
-                                errors.email.required ?
-                                    (<span className="text-danger" >
-                                        Email is required.
-                                    </span>) : null
+                                errors.email.required ? (
+                                    <span className="text-danger">
+                                        {errors.email.message || 'Email is required.'}
+                                    </span>
+                                ) : null
                             }
+
                         </div>
                     </div>
 
@@ -167,7 +227,7 @@ const RegisterPage = () => {
                         }
                     </span>
 
-                    <input type="submit" className="btn btn-primary w-100 mb-3 mt-2"  value="Register"/>
+                    <input type="submit" className="btn btn-primary w-100 mb-3 mt-2" value="Register" />
 
                     <div className="form-group text-center">
                         Already have account ? Please <Link to="/login">Login</Link>
