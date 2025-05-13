@@ -20,3 +20,8 @@
       color: #dc3545;
       font-weight: bold;
     }
+
+    .text-end {
+  text-align: right;
+}
+
