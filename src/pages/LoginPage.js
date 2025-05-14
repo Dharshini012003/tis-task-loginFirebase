@@ -1,102 +1,144 @@
+import React, { useState } from 'react'
+import './LoginPage.css';
+import { LoginApi, SendPasswordResetEmail } from '../services/api';
+import { storeUserData } from '../services/Storage';
+import { Link, useNavigate } from 'react-router-dom';
+import { isAuthenticated } from '../services/Auth';
+import { toast } from 'react-toastify';
 
-import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { useNavigate } from 'react-router-dom';
-import { sendPasswordResetEmail } from '../services/api';
-import { db } from '../firebase';
+const LoginPage = () => {
+    const navigate = useNavigate()
+    
+        const [type, setType] = useState("password");
+        const [icon, setIcon] = useState("fa-solid fa-eye-slash");
 
-const ForgetPassword = () => {
-    const [errors, setErrors] = useState({ email: { required: false, message: '' } });
-    const [inputs, setInputs] = useState({ email: "" });
-    const [message, setMessage] = useState("");
-    const [alertClass, setAlertClass] = useState("alert alert-success");
+    
+        const show = () => {
+            type === "password" ? setType("text") : setType("password");
+            icon === "fa-solid fa-eye"
+                ? setIcon("fa-solid fa-eye-slash")
+                : setIcon("fa-solid fa-eye");
+        };
+    const initialStateErrors = {
+        email: { required: false, message: '' },
+        password: { required: false },
+        custom_error: null
+    }
 
-    const navigate = useNavigate();
+    const [errors, setErrors] = useState(initialStateErrors)
+    const [inputs, setInputs] = useState({
+        email: "",
+        password: ""
+    })
 
-    const messageShow = () => {
-       message == "Check your Gmail for the reset link." ? 
-            setAlertClass("alert alert-success"):
-            setAlertClass("alert alert-danger");
-        
-    };
+    const handleInput = (e) => {
+        setInputs({ ...inputs, [e.target.name]: e.target.value })
+        console.log(inputs)
+    }
 
-    useEffect(() => {
-        if (message) {
-            messageShow(); 
-        }
-    }, [message]);
 
-    const handleEmailSubmit = async (e) => {
-        e.preventDefault();
+const handleSubmit = (e) => {
+  e.preventDefault();
 
-        // Email Validation (if empty)
-        if (inputs.email.trim() === "") {
-            setErrors({
-                ...errors,
-                email: { required: true, message: 'Email is required.' }
-            });
-            return; 
-        }
+  let errors = initialStateErrors;
+  let hasError = false;
 
-        // setErrors({
-        //     ...errors,
-        //     email: { required: false, message: '' } // Reset error message
-        // });
+  if (inputs.email === "") {
+    errors.email.required = true;
+    hasError = true;
+  }
 
-        try {
-            const emailToCheck = inputs.email.trim();
+  if (inputs.password === "") {
+    errors.password.required = true;
+    hasError = true;
+  }
 
-            // Step 1: Check Firestore for the email
-            const Ref = collection(db, "users");
-            const q = query(Ref, where("email", "==", emailToCheck));
-            const querySnapshot = await getDocs(q);
+  if (!hasError) {
+    LoginApi(inputs)
+      .then((userCredential) => {
+        const idToken = userCredential.user.accessToken;
+        storeUserData(idToken);
+        toast.success("You are Logged In...!");
+        setTimeout(() => navigate('/dashboard'), 1000);
+      })
+      .catch((err) => {
+        console.log(err);
+        setErrors({
+          ...errors,
+          custom_error: "Invalid email or password"
+        });
+      });
+  }
 
-            if (querySnapshot.empty) {
-                setMessage("This email is not registered. Please enter a registered email and try again.");
-                setTimeout(() => {
-                    setMessage("");  
-                    setInputs({ email: "" });  
-                }, 7000);
-                return;
-            }
+  setErrors({ ...errors });
+};
 
-            // Step 2: Send password reset email
-            await sendPasswordResetEmail(inputs);
 
-            setMessage("Check your Gmail for the reset link.");
-            console.log("Password reset email sent.");
-            setTimeout(() => {
-                navigate("/login");  // Navigate to login after 8 seconds
-            }, 8000);
+    // const handleSubmit = (e) => {
+    //     console.log(inputs)
 
-        } catch (err) {
-            const errorMessage = err.response?.data?.error?.message;
+    //     e.preventDefault();
+    //     let errors = initialStateErrors;
+    //     let hasError = false;
 
-            if (errorMessage === "INVALID_EMAIL") {
-                alert("Invalid email format.");
-            } else {
-                alert("Something went wrong: " + errorMessage);
-            }
+    //     if (inputs.email == "") {
+    //         errors.email.required = true;
+    //         hasError = true;
+    //     }
 
-            console.error("Password reset error:", err);
-        }
-    };
+    //     if (inputs.password == "") {
+    //         errors.password.required = true;
+    //         hasError = true;
+    //     }
 
-    // Email validation on blur
+    //     if (!hasError) {
+
+    //         //sending login api request
+    //         LoginApi(inputs)
+    //             .then((response) => {
+    //                 storeUserData(response.data.idToken);
+    //                 console.log(response)
+    //                 toast.success("You are Logged In...!")
+    //                 //  navigate('/dashboard')
+    //                 setTimeout(navigate, 6000, '/dashboard')
+    //             })
+    //             .catch((err) => {
+    //                 if (err.code == "ERR_BAD_REQUEST") {
+    //                     setErrors({ ...errors, custom_error: "Invalid Credentials" })
+    //                     console.log(errors)
+    //                 }
+    //                 console.log(err)
+    //             })
+    //         //   .finally(()=>{
+    //         //       setLoading(false)
+    //         //   })
+    //     }
+    //     setErrors({ ...errors })
+    //     console.log(errors)
+
+    // }
+
+
+    //email validation on blur
+    //email validation on blur
     const validateEmail = (email) => {
-        const trimmedEmail = email.trim().replace(/\s+/g, '');
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
-        if (trimmedEmail === '') {
+        let RemoveExtraSpaceEmail = email.trim().replace(/\s+/g, '');
+        var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
+        if (RemoveExtraSpaceEmail == '') {
             setErrors({
                 ...errors,
                 email: { required: true, message: 'Email is required.' }
             });
-        } else if (!emailRegex.test(trimmedEmail)) {
+
+        }
+        else if (!emailRegex.test(RemoveExtraSpaceEmail)) {
             setErrors({
                 ...errors,
                 email: { required: true, message: 'Please enter a valid Email ID' }
             });
-        } else {
+
+        }
+        else {
             setErrors({
                 ...errors,
                 email: { required: false, message: '' }
@@ -104,16 +146,28 @@ const ForgetPassword = () => {
         }
     };
 
+    const handleForgetPassword = ()=>{
+                     navigate('/forgotPassword')
+                    // setTimeout(navigate, 6000, '/dashboard')
+    }
+
+
+    //  if(isAuthenticated()){
+    //     //redierct user to dashboard
+    //      return <Navigate to="/dashboard"/>
+    //  }
+
+
     return (
         <div className="container">
-            <div className="login-container">
-                <h4 className="mb-4 text-center text-uppercase">Reset Your Password</h4>
-                <p className="text-center">We will send you an email to reset your password</p>
+            <div className="login-container ">
+                <h4 className="mb-4 text-center text-uppercase">Login</h4>
 
-                <form id="loginForm" onSubmit={handleEmailSubmit} action="">
+                <form id="loginForm" onSubmit={handleSubmit} action="" >
                     <div className="mb-3">
-                        <div className="form-group">
-                            <label htmlFor="email" className="form-label h6">Email</label>
+                        <div className="form-group ">
+
+                            <label htmlFor="email" className="form-label h6 " >Email</label>
                             <div className="input-group">
                                 <span className="input-group-text" id="basic-addon1"><i className="fa fa-envelope" aria-hidden="true"></i></span>
                                 <input
@@ -123,8 +177,7 @@ const ForgetPassword = () => {
                                     id="email"
                                     placeholder="Enter email"
                                     aria-describedby="basic-addon1"
-                                    value={inputs.email}
-                                    onChange={e => setInputs(pre => ({ ...pre, email: e.target.value }))}
+                                    onChange={handleInput}
                                     onBlur={e => { validateEmail(e.target.value) }}
                                 />
                             </div>
@@ -135,25 +188,74 @@ const ForgetPassword = () => {
                                     </span>
                                 ) : null
                             }
+
                         </div>
                     </div>
 
-                    <span className="text-danger">
-                        {errors.custom_error ? (<p>{errors.custom_error}</p>) : null}
+                    <div className="mb-3">
+                        <div className="form-group">
+                            <label htmlFor="password" className="form-label h6">Password</label>
+
+                                <div className="input-group d-flex flex-nowrap">
+
+                                <span className="input-group-text  d-inline-block  ">
+                                    <i className="fas fa-lock" aria-hidden="true"></i>
+                                </span>
+
+                                <div className="password-box d-flex  align-items-center border rounded w-100">
+
+
+                                    <input
+                                        type={type}
+                                        name="password"
+                                        className="form-control border-0"
+                                        id="password"
+                                        placeholder="Enter password"
+                                        onChange={handleInput}
+                                    />
+
+                                    <i onClick={show} className={`${icon} px-2`} style={{ cursor: 'pointer' }}></i>
+                                </div>
+
+
+
+                            </div>
+
+                            {
+                                errors.password.required ? (<span className="text-danger" >
+                                    Password is required.
+                                </span>) : null
+                            }
+                            <div className="w-100 text-end mt-1">
+                                <Link to="/forgotPassword" className="small" onClick={handleForgetPassword}>Forgot Password?</Link>
+                            </div>
+                          
+                        </div>
+
+                    </div>
+
+                    <span className="text-danger" >
+                        {errors.custom_error ?
+                            (<p>{errors.custom_error}</p>)
+                            : null
+                        }
                     </span>
 
-                    <button type="submit" className="btn btn-primary w-100 mb-3 mt-2">Send Link to Email</button>
-                </form>
 
-                {message && (
-                    <div className={alertClass} role="alert">
-                        {message}
+                    <input type="submit" className="btn btn-primary w-100 mb-3 mt-2"  value="Login" />
+
+
+
+                    <div className="form-group text-center">
+                        Create new account ? Please <Link to="/">Register</Link>
                     </div>
-                )}
+
+                </form>
             </div>
         </div>
-    );
-};
 
-export default ForgetPassword;
+    )
+}
 
+
+export default LoginPage
