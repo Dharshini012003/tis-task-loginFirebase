@@ -8,7 +8,18 @@ import { toast } from 'react-toastify';
 // import { validateEmail } from '../validations/FieldValidation';
 
 const RegisterPage = () => {
-    const navigate=useNavigate()
+    const navigate = useNavigate()
+
+    const [type, setType] = useState("password");
+    const [icon, setIcon] = useState("fa-solid fa-eye-slash");
+
+    const show = () => {
+        type === "password" ? setType("text") : setType("password");
+        icon === "fa-solid fa-eye"
+            ? setIcon("fa-solid fa-eye-slash")
+            : setIcon("fa-solid fa-eye");
+    };
+
     const initialStateErrors = {
         email: { required: false, message: '' },
         password: { required: false },
@@ -82,7 +93,7 @@ const RegisterPage = () => {
                     console.log(response)
                     toast.success("User added succesfully!")
                     // navigate('/dashboard')
-                    setTimeout(navigate,6000,'/dashboard')
+                    setTimeout(navigate, 8000, '/dashboard')
                 })
                 .catch((err) => {
                     if (err.response.data.error.message == "EMAIL_EXISTS") {
@@ -108,31 +119,31 @@ const RegisterPage = () => {
 
     }
 
-//email validation on blur
-const validateEmail = (email) => {
-      let RemoveExtraSpaceEmail = email.trim().replace(/\s+/g, '');
-            var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
-             if (RemoveExtraSpaceEmail=='') {
-                setErrors({
-                    ...errors,
-                    email: { required: true, message: 'Email is required.' }
-                });
+    //email validation on blur
+    const validateEmail = (email) => {
+        let RemoveExtraSpaceEmail = email.trim().replace(/\s+/g, '');
+        var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
+        if (RemoveExtraSpaceEmail == '') {
+            setErrors({
+                ...errors,
+                email: { required: true, message: 'Email is required.' }
+            });
 
-            }
-           else if (!emailRegex.test(RemoveExtraSpaceEmail)) {
-                setErrors({
-                    ...errors,
-                    email: { required: true, message: 'Please enter a valid Email ID' }
-                });
+        }
+        else if (!emailRegex.test(RemoveExtraSpaceEmail)) {
+            setErrors({
+                ...errors,
+                email: { required: true, message: 'Please enter a valid Email ID' }
+            });
 
-            }
-            else {
-                setErrors({
-                    ...errors,
-                    email: { required: false, message: '' }
-                });
-            }
-};
+        }
+        else {
+            setErrors({
+                ...errors,
+                email: { required: false, message: '' }
+            });
+        }
+    };
 
 
 
@@ -185,7 +196,7 @@ const validateEmail = (email) => {
                                     placeholder="Enter email"
                                     aria-describedby="basic-addon1"
                                     onChange={handleInput}
-                                    onBlur={e=>{validateEmail(e.target.value)}}
+                                    onBlur={e => { validateEmail(e.target.value) }}
                                 />
                             </div>
                             {
@@ -202,16 +213,26 @@ const validateEmail = (email) => {
                     <div className="mb-3">
                         <div className="form-group">
                             <label htmlFor="password" className="form-label h6">Password</label>
-                            <div className="input-group">
-                                <span className="input-group-text" id="basic-addon1"><i className="	fas fa-lock" aria-hidden="true"></i></span>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    className="form-control"
-                                    id="password"
-                                    placeholder="Enter password"
-                                    onChange={handleInput}
-                                />
+                            <div className="input-group d-flex flex-nowrap">
+                                <span className="input-group-text  d-inline-block  ">
+                                    <i className="fas fa-lock" aria-hidden="true"></i>
+                                </span>
+
+                                <div className="password-box d-flex  align-items-center border rounded w-100">
+
+
+                                    <input
+                                        type={type}
+                                        name="password"
+                                        className="form-control border-0"
+                                        id="password"
+                                        placeholder="Enter password"
+                                        onChange={handleInput}
+                                    />
+
+                                    <i onClick={show} className={`${icon} px-2`} style={{ cursor: 'pointer' }}></i>
+                                </div>
+
                             </div>
                             {
                                 errors.password.required ? (<span className="text-danger" >
