@@ -9,6 +9,7 @@ const ForgetPassword = () => {
     const [errors, setErrors] = useState({ email: { required: false, message: '' } });
     const [inputs, setInputs] = useState({ email: "" });
     const [message, setMessage] = useState("");
+    const [loading, setLoading] = useState(false)
     const [alertClass, setAlertClass] = useState("alert alert-success");
 
     const navigate = useNavigate();
@@ -42,16 +43,17 @@ const ForgetPassword = () => {
         //     ...errors,
         //     email: { required: false, message: '' } // Reset error message
         // });
-
+ setLoading(true);
         try {
             const emailToCheck = inputs.email.trim();
 
             // Step 1: Check Firestore for the email
-            const Ref = collection(db, "users");
+            const Ref = collection(db, "users2");
             const q = query(Ref, where("email", "==", emailToCheck));
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
+                // setLoading(true)
                 setMessage("This email is not registered. Please enter a registered email and try again.");
                 setTimeout(() => {
                     setMessage("");  
@@ -62,7 +64,7 @@ const ForgetPassword = () => {
 
             // Step 2: Send password reset email
             await sendPasswordResetEmail(inputs);
-
+            // setLoading(true)
             setMessage("Check your Gmail for the reset link.");
             console.log("Password reset email sent.");
             setTimeout(() => {
@@ -78,8 +80,15 @@ const ForgetPassword = () => {
                 alert("Something went wrong: " + errorMessage);
             }
 
+            
+
             console.error("Password reset error:", err);
+        }            
+        finally
+        {
+                    setLoading(false)
         }
+        
     };
 
     // Email validation on blur
@@ -142,7 +151,15 @@ const ForgetPassword = () => {
                         {errors.custom_error ? (<p>{errors.custom_error}</p>) : null}
                     </span>
 
-                    <button type="submit" className="btn btn-primary w-100 mb-3 mt-2">Send Link to Email</button>
+                    {loading ?
+                        (<div className="text-center">
+                            <div className="spinner-border text-primary " role="status">
+                                <span className="sr-only">Loading...</span>
+                            </div>
+                        </div>) : null
+                    }
+
+                    <input type="submit" className="btn btn-primary w-100 mb-3 mt-2"  disabled={loading} />
                 </form>
 
                 {message && (
@@ -156,4 +173,3 @@ const ForgetPassword = () => {
 };
 
 export default ForgetPassword;
-
