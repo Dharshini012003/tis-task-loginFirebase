@@ -59,7 +59,7 @@ const handleSubmit = (e) => {
         const idToken = userCredential.user.accessToken;
         storeUserData(idToken);
         toast.success("You are Logged In...!");
-        setTimeout(() => navigate('/dashboard'), 1000);
+        setTimeout(() => navigate('/dashboard'), 6000);
       })
       .catch((err) => {
         console.log(err);
