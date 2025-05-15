@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 
 const LoginPage = () => {
     const navigate = useNavigate()
-    
+         const [loading, setLoading] = useState(false)
         const [type, setType] = useState("password");
         const [icon, setIcon] = useState("fa-solid fa-eye-slash");
 
@@ -54,12 +54,15 @@ const handleSubmit = (e) => {
   }
 
   if (!hasError) {
+    setLoading(true)
     LoginApi(inputs)
       .then((userCredential) => {
+        setLoading(true)
         const idToken = userCredential.user.accessToken;
         storeUserData(idToken);
-        toast.success("You are Logged In...!");
-        setTimeout(() => navigate('/dashboard'), 6000);
+        // toast.success("You are Logged In...!");
+         navigate('/dashboard')
+        // setTimeout(() => navigate('/dashboard'), 1000);
       })
       .catch((err) => {
         console.log(err);
@@ -67,7 +70,9 @@ const handleSubmit = (e) => {
           ...errors,
           custom_error: "Invalid email or password"
         });
-      });
+      }) .finally(() => {
+                    setLoading(false)
+                });
   }
 
   setErrors({ ...errors });
@@ -241,8 +246,17 @@ const handleSubmit = (e) => {
                         }
                     </span>
 
+                    
+                    {loading ?
+                        (<div className="text-center">
+                            <div className="spinner-border text-primary " role="status">
+                                <span className="sr-only">Loading...</span>
+                            </div>
+                        </div>) : null
+                    }
 
-                    <input type="submit" className="btn btn-primary w-100 mb-3 mt-2"  value="Login" />
+
+                    <input type="submit" className="btn btn-primary w-100 mb-3 mt-2"  value="Login" disabled={loading}/>
 
 
 
