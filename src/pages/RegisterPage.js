@@ -77,8 +77,6 @@ const RegisterPage = () => {
             hasError = true;
         }
 
-
-
         if (inputs.password == "") {
             errors.password.required = true;
             hasError = true;
