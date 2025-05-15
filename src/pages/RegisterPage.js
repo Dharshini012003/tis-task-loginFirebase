@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 
 const RegisterPage = () => {
     const navigate = useNavigate()
+    const [loading, setLoading] = useState(false)
 
     const [type, setType] = useState("password");
     const [icon, setIcon] = useState("fa-solid fa-eye-slash");
@@ -83,15 +84,17 @@ const RegisterPage = () => {
         }
 
         if (!hasError) {
-
+            setLoading(true)
             //sending regiter api request
             RegisterApi(inputs)
                 .then((response) => {
+                    // toast.success("User added succesfully!",{autoClose: 2000})
+                    setLoading(true)
                     storeUserData(response.data.idToken);
                     console.log(response)
-                    toast.success("User added succesfully!")
-                    // navigate('/dashboard')
-                    setTimeout(navigate, 8000, '/dashboard')
+                   
+                    navigate('/dashboard')
+                    // setTimeout(navigate, 3000, '/login')
                 })
                 .catch((err) => {
                     if (err.response.data.error.message == "EMAIL_EXISTS") {
@@ -106,9 +109,9 @@ const RegisterPage = () => {
 
                     console.log(err)
                 })
-            // .finally(()=>{
-            //     setLoading(false)
-            // })
+                .finally(() => {
+                    setLoading(false)
+                })
         }
         setErrors({ ...errors })
         console.log(errors)
@@ -248,7 +251,16 @@ const RegisterPage = () => {
                         }
                     </span>
 
-                    <input type="submit" className="btn btn-primary w-100 mb-3 mt-2" value="Register" />
+
+                    {loading ?
+                        (<div className="text-center">
+                            <div className="spinner-border text-primary " role="status">
+                                <span className="sr-only">Loading...</span>
+                            </div>
+                        </div>) : null
+                    }
+
+                    <input type="submit" className="btn btn-primary w-100 mb-3 mt-2" value="Register" disabled={loading}/>
 
                     <div className="form-group text-center">
                         Already have account ? Please <Link to="/login">Login</Link>
