@@ -21,38 +21,39 @@ const [inputs, setInputs] = useState({ name: "", password: "" });
   const [icon, setIcon] = useState("fa-solid fa-eye-slash");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const auth = getAuth();
+useEffect(() => {
+  const auth = getAuth();
 
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        // Optionally fetch additional data from Firestore
-        setUser({
-          name: currentUser.displayName || "User",
-          email: currentUser.email,
-          localId: currentUser.uid,
-        });
-      } else {
-        // Redirect to login or show error
-        navigate('/login');
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-
-    UserDetailsApi()
-      .then((response) => {
-        const data = response.data.users[0];
-        setUser({ name: data.displayName, email: data.email, localId: data.localId });
-      })
-      .catch((error) => {
-        console.error("Error fetching user details:", error);
+  const unsubscribe = onAuthStateChanged(auth, async(currentUser) => {
+    if (currentUser) {
+        await currentUser.reload();
+      setUser({
+        name: currentUser.displayName || "User",
+        email: currentUser.email,
+        localId: currentUser.uid,
       });
+    } 
+    else {
+      navigate('/login');
+    }
+  });
 
-  }, []);
+  return () => unsubscribe();
+}, []);
+
+
+  // useEffect(() => {
+
+  //   UserDetailsApi()
+  //     .then((response) => {
+  //       const data = response.data.users[0];
+  //       setUser({ name: data.displayName, email: data.email, localId: data.localId });
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error fetching user details:", error);
+  //     });
+
+  // }, []);
 
   const handleShow = (type) => {
     setUpdateType(type);
@@ -82,6 +83,7 @@ const [inputs, setInputs] = useState({ name: "", password: "" });
         await changeName(inputs);
       setUser({...user, name:inputs.name})
         toast.success("Name updated successfully.");
+         handleClose();
         // setTimeout(setMessage,5000,"Name updated successfully.")
       }
 
@@ -90,13 +92,22 @@ const [inputs, setInputs] = useState({ name: "", password: "" });
         if (!inputs.password) return alert("Please enter a new password.");
         await changePassword(inputs);
         toast.success("Password updated successfully.");
-      }
+        handleClose();
+      } 
 
-      setInputs({ email: "", password: "" });
+       if (type === "delete") {
+    await deleteAccount();
+    toast.success("Account deleted successfully.");
+    setTimeout(logoutUser, 8000);
+    handleClose(); 
+      } 
+
+      setInputs({ name: "", password: "" });
     } catch (err) {
       handleError(err.code || err.message);
     }
   };
+
 
   const logoutUser = () => {
     logout();
