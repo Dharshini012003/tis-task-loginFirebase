@@ -1,17 +1,19 @@
 
 // src/pages/DashBoard.js
 import React, { useState, useEffect } from 'react';
-import { changeEmail, changePassword, UserDetailsApi } from '../services/api';
+import { changeEmail, changePassword, UserDetailsApi, changeName,deleteAccount } from '../services/api';
 import { logout } from '../services/Auth';
 import { Link, useNavigate } from 'react-router-dom';
 import UpdateModal from '../components/UpdateModal';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { toast } from 'react-toastify';
 
 const DashBoard = () => {
   const [user, setUser] = useState({ name: "", email: "", localId: "" });
-  const [inputs, setInputs] = useState({ email: "", password: "" });
-  const [message, setMessage] = useState('');
+const [inputs, setInputs] = useState({ name: "", password: "" });
+
+  // const [message, setMessage] = useState('');
   const [show, setShow] = useState(false);
   const [updateType, setUpdateType] = useState("password");
 
@@ -19,27 +21,28 @@ const DashBoard = () => {
   const [icon, setIcon] = useState("fa-solid fa-eye-slash");
   const navigate = useNavigate();
 
-useEffect(() => {
-  const auth = getAuth();
+  useEffect(() => {
+    const auth = getAuth();
 
-  const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-    if (currentUser) {
-      // Optionally fetch additional data from Firestore
-      setUser({
-        name: currentUser.displayName || "User",
-        email: currentUser.email,
-        localId: currentUser.uid,
-      });
-    } else {
-      // Redirect to login or show error
-      navigate('/login');
-    }
-  });
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        // Optionally fetch additional data from Firestore
+        setUser({
+          name: currentUser.displayName || "User",
+          email: currentUser.email,
+          localId: currentUser.uid,
+        });
+      } else {
+        // Redirect to login or show error
+        navigate('/login');
+      }
+    });
 
-  return () => unsubscribe();
-}, []);
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
+
     UserDetailsApi()
       .then((response) => {
         const data = response.data.users[0];
@@ -48,6 +51,7 @@ useEffect(() => {
       .catch((error) => {
         console.error("Error fetching user details:", error);
       });
+
   }, []);
 
   const handleShow = (type) => {
@@ -66,23 +70,26 @@ useEffect(() => {
   };
 
   const handleError = (errorMessage) => {
-    setInputs({ email: "", password: "" });
-    alert("Error: " + errorMessage);
+    setInputs({ name: "", password: "" });
+    toast.error("Error: " + errorMessage);
   };
-console.log("Current user at update:", getAuth().currentUser);
+  console.log("Current user at update:", getAuth().currentUser);
 
   const handleUpdate = async (type) => {
     try {
-      if (type === "email") {
-        if (!inputs.email) return alert("Please enter a new email.");
-        await changeEmail(inputs);
-        setMessage("Email updated successfully.");
+      if (type === "name") {
+        if (!inputs.name) return alert("Please enter new name.");
+        await changeName(inputs);
+      setUser({...user, name:inputs.name})
+        toast.success("Name updated successfully.");
+        // setTimeout(setMessage,5000,"Name updated successfully.")
       }
+
 
       if (type === "password") {
         if (!inputs.password) return alert("Please enter a new password.");
         await changePassword(inputs);
-        setMessage("Password updated successfully.");
+        toast.success("Password updated successfully.");
       }
 
       setInputs({ email: "", password: "" });
@@ -128,22 +135,26 @@ console.log("Current user at update:", getAuth().currentUser);
           </table>
 
           <p className="fw-bold text-center text-muted h5 mt-5">
-            Update your Email or Password
+            Update your Name and Password with the below Links
           </p>
           <div className="d-flex align-items-center justify-content-center mt-4 gap-3">
             <Link onClick={() => handleShow("password")} className="text-decoration-none text-center">
               Update Password
             </Link>
-            <Link onClick={() => handleShow("email")} className="text-decoration-none text-center">
-              Update Email
+            <Link onClick={() => handleShow("name")} className="text-decoration-none text-center">
+              Update Name
             </Link>
+            <Link  className="text-decoration-none text-center" onClick={() => handleShow("delete")}>
+              Delete Account
+            </Link>
+
           </div>
 
-          {message && (
+          {/* {message && (
             <div className="alert alert-success text-center mt-3" style={{ width: "60%", margin: "0 auto" }}>
               {message}
             </div>
-          )}
+          )} */}
 
           <UpdateModal
             show={show}
