@@ -3,7 +3,7 @@ import axios from "axios";
 import { getUserData } from "./Storage";
 import { doc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import { getAuth, updateEmail, updatePassword } from "firebase/auth";
+import { getAuth, updateEmail, updatePassword ,updateProfile} from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase"; // your initialized auth
 
@@ -14,6 +14,7 @@ const REGISTER_URL = `/accounts:signUp?key=${API_KEY}`;
 //const LOGIN_URL = `/accounts:signInWithPassword?key=${API_KEY}`;
 const USER_DETAILS = `/accounts:lookup?key=${API_KEY}`;
 const PS_RESET_MAIL = `/accounts:sendOobCode?key=${API_KEY}`;
+const DELETE_ACC =`/accounts:delete?key=${API_KEY}`;
 
 // Register user
 export const RegisterApi = async (inputs) => {
@@ -31,7 +32,8 @@ export const RegisterApi = async (inputs) => {
       uid: localId,
       email: email,
       name: inputs.name,
-      createdAt: new Date()
+      createdAt: new Date(),
+      // photo:""
     });
 
     return response;
@@ -47,14 +49,14 @@ export const RegisterApi = async (inputs) => {
 //   return axios.post(LOGIN_URL, data);
 // };
 
+
+
 //log in firebase sdk
-
-
 export const LoginApi = (inputs) => {
   return signInWithEmailAndPassword(auth, inputs.email, inputs.password);
 };
 
-// Get user details using idToken
+// Get single user details using idToken
 export const UserDetailsApi = () => {
   const data = { idToken: getUserData() };
   return axios.post(USER_DETAILS, data);
@@ -66,6 +68,37 @@ export const sendPasswordResetEmail = (inputs) => {
   const data = { requestType: "PASSWORD_RESET", email: inputs.email };
   return axios.post(PS_RESET_MAIL, data);
 };
+
+// Update/change password using Firebase SDK
+export const changePassword = async (inputs) => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) throw new Error("No user logged in");
+
+  await updatePassword(user, inputs.password);
+
+  console.log("Password updated successfully in Firebase Auth");
+}
+
+//update name
+export const changeName = async (inputs) => {
+const auth = getAuth();
+const user = auth.currentUser;
+
+if (!user) throw new Error("No user logged in");
+
+await updateProfile(user, { displayName: inputs.name });
+
+console.log("Name updated successfully in Firebase Auth");
+};
+
+//delete account
+export const deleteAccount =()=>{
+     const data = { idToken: getUserData() };
+  return axios.post(DELETE_ACC, data);
+}
+
 
 // Update email using Firebase SDK
 export const changeEmail = async (inputs) => {
@@ -81,20 +114,18 @@ export const changeEmail = async (inputs) => {
   console.log("Email updated successfully in both Firebase Auth and Firestore");
 };
 
-// // Update password using Firebase SDK
-export const changePassword = async (inputs) => {
-  const auth = getAuth();
-  const user = auth.currentUser;
 
-  if (!user) throw new Error("No user logged in");
 
-  await updatePassword(user, inputs.password);
 
-  console.log("Password updated successfully in Firebase Auth");
-export const sendPasswordResetEmail=(inputs)=>{
-   let data={requestType: 'PASSWORD_RESET',email:inputs.email}
-   return axios.post(PS_RESET_MAIL,data)
-}
+
+
+
+
+
+// export const sendPasswordResetEmail=(inputs)=>{
+//    let data={requestType: 'PASSWORD_RESET',email:inputs.email}
+//    return axios.post(PS_RESET_MAIL,data)
+// }
 
 // export const changeEmail=(inputs)=>{
 //    let data={idToken:getUserData(),email:inputs.email}
